@@ -1,0 +1,502 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%}*,*::before,*::after{box-sizing:inherit}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style><title>Let's Talk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Noto+Sans+HK:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap">
+<style>
+/* Layout: one screen, two speaker blocks split by a seam. The listener's block grows so captions read big.
+   Radius rule: blocks 28px, tiles 22px, every button and input is a full pill or circle. */
+:root{
+  --bg:#e8ebe8; --block:#f8faf8; --ink:#14191a; --muted:#5b6467; --line:#d3d8d5; --on:#fbfcfb;
+  --a:#0c7a5e; --b:#2d4dcc; --live:#c2410c; --danger:#b42318;
+  --kface:#fff3f6; --kblush:#ff9db4; --kmouth:#c2456b; --kearin:#ffc2d1;
+  --ui:"Atkinson Hyperlegible","Noto Sans HK","Noto Sans SC",system-ui,sans-serif;
+  --display:"Bricolage Grotesque","Atkinson Hyperlegible",system-ui,sans-serif;
+  --ease:cubic-bezier(.22,1,.36,1);
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0b0e0f; --block:#151a1b; --ink:#e7ecea; --muted:#97a19f; --line:#283033; --on:#0b0f0f;
+  --a:#43c59a; --b:#8ea2ff; --live:#ff9a62; --danger:#ff8a7a;
+  --kface:#2b242d; --kblush:#ff8fa8; --kmouth:#e8607f; --kearin:#7a4558; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0b0e0f; --block:#151a1b; --ink:#e7ecea; --muted:#97a19f; --line:#283033; --on:#0b0f0f;
+  --a:#43c59a; --b:#8ea2ff; --live:#ff9a62; --danger:#ff8a7a;
+  --kface:#2b242d; --kblush:#ff8fa8; --kmouth:#e8607f; --kearin:#7a4558; color-scheme:dark }
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);overflow:hidden;-webkit-tap-highlight-color:transparent}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--c,var(--b));outline-offset:3px}
+.ic{display:inline-grid;place-items:center;flex:none}
+.ic svg{width:1em;height:1em;fill:currentColor}
+
+/* ---------- frame ---------- */
+.app{height:100%;display:flex;flex-direction:column;gap:5px;padding-block:8px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app[data-layout="side"]{flex-direction:row}
+.seam{flex:none;position:relative;z-index:3;height:0}
+.app[data-layout="side"] .seam{height:auto;width:0}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--line);background:var(--block);color:var(--muted);font-size:20px;display:grid;place-items:center;
+  box-shadow:0 4px 14px color-mix(in srgb,var(--ink) 12%,transparent);transition:transform .2s var(--ease)}
+.hub:active{transform:translate(-50%,-50%) scale(.94)}
+
+/* ---------- blocks ---------- */
+.block{--c:var(--a);flex:1 1 0;min-height:168px;min-width:0;display:flex;flex-direction:column;position:relative;
+  background:color-mix(in srgb,var(--c) 7%,var(--block));border:1px solid color-mix(in srgb,var(--c) 18%,var(--line));
+  border-radius:28px;overflow:hidden;transition:flex-grow .5s var(--ease)}
+.block[data-i="1"]{--c:var(--b)}
+.app[data-layout="side"] .block{min-height:0;min-width:200px}
+.block.big{flex-grow:2.4}
+.app[data-layout="facing"] .block[data-i="1"]{transform:rotate(180deg)}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 12px 4px 12px}
+.lang{position:relative;display:flex;align-items:center;gap:7px;height:38px;padding:0 12px 0 10px;border-radius:999px;
+  background:color-mix(in srgb,var(--c) 14%,transparent);color:var(--c);font-weight:700;font-size:15px}
+.lang .ic{font-size:18px}
+.lang select{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
+.swap{height:38px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--block);color:var(--muted);
+  display:flex;align-items:center;gap:6px;font-size:14px}
+.swap .ic{font-size:18px}
+
+/* captions */
+.feed{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:6px 18px 12px;overscroll-behavior:contain;
+  -webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 18px);mask-image:linear-gradient(to bottom,transparent 0,#000 18px)}
+.feed > :first-child{margin-top:auto}
+.line{max-width:94%;line-height:1.28;overflow-wrap:anywhere;animation:rise .35s var(--ease) both}
+.line .sub{font-size:15px;color:var(--muted);margin-top:4px;font-weight:400}
+.line.in{align-self:flex-start;font-size:19px;color:var(--muted)}
+.line.in.latest{font-size:clamp(24px,3vh + 9px,40px);font-weight:700;color:var(--ink)}
+.line.in.latest .who{display:block}
+.line.out{align-self:flex-end;text-align:right;font-size:16px;color:var(--muted)}
+.line.out.latest{color:var(--ink)}
+.who{display:none;font-size:13px;font-weight:700;color:var(--sc);margin-bottom:4px;letter-spacing:.02em}
+.line.s0{--sc:var(--a)} .line.s1{--sc:var(--b)}
+.line.pending .txt{color:var(--muted);font-weight:400}
+.line.live{align-self:flex-end;text-align:right;font-size:clamp(18px,2vh + 8px,26px);color:var(--ink)}
+.line.err{color:var(--danger);font-size:16px}
+.line.err button{margin-left:8px;border:1px solid currentColor;background:transparent;border-radius:999px;padding:2px 12px;color:inherit}
+.waiting{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:400}
+.pet{--f:40px;width:var(--f);height:auto;flex:none;overflow:visible;color:var(--ink)}
+.pet.big{--f:68px}
+.pet .body{fill:var(--kface);stroke:currentColor;stroke-width:4;stroke-linejoin:round}
+.pet .eye{fill:currentColor;transform-box:fill-box;transform-origin:center;animation:petblink 3.4s infinite}
+.pet .shine{fill:#fff}
+.pet .cheek{fill:var(--kblush);opacity:.75}
+.pet .earin{fill:var(--kearin)}
+.pet .mouth{fill:var(--kmouth);stroke:var(--kmouth);stroke-width:2.4;stroke-linejoin:round}
+.pet .tongue{fill:var(--kblush)}
+.pet .nose{fill:var(--kblush);stroke:currentColor;stroke-width:2.2;stroke-linejoin:round}
+.pet .whisk{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.pet .hop{transform-box:fill-box;transform-origin:50% 100%;animation:pethop 1.3s ease-in-out infinite}
+.pet .tilt{transform-box:fill-box;transform-origin:50% 100%;animation:pettilt 2.6s ease-in-out infinite}
+@keyframes petblink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.12)}}
+@keyframes pethop{0%,100%{transform:scale(1.04,.95)}50%{transform:translateY(-4px) scale(.98,1.03)}}
+@keyframes pettilt{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* docks */
+.dock{padding:10px 12px 14px;display:flex;align-items:center;gap:10px}
+.dock-idle{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{height:64px;border-radius:22px;border:1.5px solid var(--c);background:transparent;color:var(--c);
+  display:flex;align-items:center;justify-content:center;gap:10px;font-family:var(--display);font-weight:700;font-size:19px;
+  transition:transform .15s var(--ease)}
+.tile .ic{font-size:24px}
+.tile.primary{background:var(--c);color:var(--on)}
+.tile:active,.mic:active,.send:active{transform:scale(.97)}
+
+.dock-speak{justify-content:center;flex-direction:column;gap:6px}
+.mic{width:76px;height:76px;border-radius:50%;border:0;background:var(--c);color:var(--on);font-size:32px;display:grid;place-items:center;position:relative;
+  transition:transform .15s var(--ease),background-color .2s}
+.mic.on{background:var(--live)}
+.mic.on::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:3px solid var(--live);animation:ring 1.3s var(--ease) infinite}
+@keyframes ring{from{transform:scale(.92);opacity:1}to{transform:scale(1.28);opacity:0}}
+.hint{font-size:14px;color:var(--muted);min-height:1.3em;text-align:center}
+.hint.on{color:var(--live);font-weight:700}
+
+.dock-type input{flex:1;min-width:0;height:52px;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--c) 35%,var(--line));
+  background:var(--block);padding:0 18px;font-size:17px}
+.dock-type input::placeholder{color:var(--muted)}
+.send{width:52px;height:52px;border-radius:50%;border:0;background:var(--c);color:var(--on);font-size:22px;display:grid;place-items:center;flex:none}
+
+/* blank block: nothing said yet and no mode chosen */
+.block.blank .feed{display:none}
+.block.blank .dock{flex:1;align-items:center}
+.block.blank .dock-idle{width:100%;max-width:420px;margin:0 auto}
+.block.blank .tile{height:96px;flex-direction:column;gap:6px;font-size:20px}
+.block.blank .tile .ic{font-size:30px}
+.block.blank.compact .tile{height:64px;flex-direction:row}
+
+/* ---------- settings sheet ---------- */
+.scrim{position:fixed;inset:0;z-index:20;background:color-mix(in srgb,var(--ink) 35%,transparent);display:flex;align-items:flex-end;justify-content:center;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));animation:fade .2s both}
+.sheet{width:100%;max-width:440px;background:var(--block);border-radius:28px;padding:20px;display:grid;gap:18px;max-height:calc(100% - 8px);overflow-y:auto;animation:up .35s var(--ease) both}
+@keyframes fade{from{opacity:0}} @keyframes up{from{transform:translateY(24px);opacity:0}}
+.sheet-head{display:flex;align-items:center;justify-content:space-between}
+.sheet h2{margin:0;font-family:var(--display);font-size:22px}
+.x{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:transparent;font-size:18px;display:grid;place-items:center}
+.group{display:grid;gap:8px}
+.label{font-size:14px;color:var(--muted);font-weight:700}
+.layouts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.lay{border:1.5px solid var(--line);background:transparent;border-radius:22px;padding:12px 6px;display:grid;justify-items:center;gap:6px;font-size:14px}
+.lay .ic{font-size:24px;color:var(--muted)}
+.lay[aria-pressed="true"]{border-color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.lay[aria-pressed="true"] .ic{color:var(--ink)}
+.faces{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fp{border:1.5px solid var(--line);background:transparent;border-radius:22px;padding:10px 6px 12px;display:grid;justify-items:center;gap:6px;font-size:14px}
+.fp .pet{--f:56px}
+.fp[aria-pressed="true"]{border-color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px}
+.switch{width:52px;height:32px;border-radius:999px;border:0;background:var(--line);position:relative;flex:none;transition:background-color .2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:var(--on);
+  box-shadow:0 1px 3px color-mix(in srgb,var(--ink) 30%,transparent);transition:transform .25s var(--ease)}
+.switch[aria-checked="true"]{background:var(--a)}
+.switch[aria-checked="true"]::after{transform:translateX(20px)}
+.pillbtn{height:44px;border-radius:999px;border:1px solid var(--line);background:transparent;padding:0 16px;display:flex;align-items:center;gap:8px;font-size:15px}
+.pillbtn.danger{color:var(--danger)}
+.keyrow{display:flex;gap:8px}
+.keyrow input{flex:1;min-width:0;height:44px;border-radius:999px;border:1px solid var(--line);background:var(--bg);padding:0 16px}
+.note{font-size:13px;color:var(--muted);line-height:1.45;margin:0}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;
+  width:max-content;max-width:calc(100% - 32px);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:18px;font-size:14px;line-height:1.4;text-align:center}
+
+@media (prefers-reduced-motion:reduce){
+  .block,.switch,.switch::after{transition:none}
+  .line,.sheet,.scrim{animation:none}
+  .mic.on::after,.pet .eye,.pet .hop,.pet .tilt{animation:none}
+}
+</style></head><body>
+
+<div class="app" id="app" data-layout="stacked">
+  <section class="block blank" data-i="1" id="b1" aria-label="Second speaker"></section>
+  <div class="seam"><button class="hub" id="hub" aria-label="Settings"><span class="ic" data-icon="sliders-horizontal"></span></button></div>
+  <section class="block blank" data-i="0" id="b0" aria-label="First speaker"></section>
+</div>
+
+<template id="blockTpl">
+  <div class="top">
+    <label class="lang"><span class="ic" data-icon="translate"></span><span class="lang-name"></span><span class="ic" data-icon="caret-down"></span>
+      <select class="lang-select" aria-label="Language"></select></label>
+    <button type="button" class="swap" hidden><span class="ic"></span><span class="swap-label"></span></button>
+  </div>
+  <div class="feed" aria-live="polite"></div>
+  <div class="dock">
+    <div class="dock-idle">
+      <button type="button" class="tile primary" data-mode="speak"><span class="ic" data-icon="microphone-fill"></span><span class="t-speak"></span></button>
+      <button type="button" class="tile" data-mode="type"><span class="ic" data-icon="keyboard"></span><span class="t-type"></span></button>
+    </div>
+    <div class="dock-speak" hidden>
+      <button type="button" class="mic"><span class="ic" data-icon="microphone-fill"></span></button>
+      <div class="hint"></div>
+    </div>
+    <form class="dock-type" hidden style="display:flex;gap:10px;width:100%">
+      <input type="text" autocomplete="off" enterkeyhint="send">
+      <button class="send" aria-label="Send"><span class="ic" data-icon="paper-plane-right-fill"></span></button>
+    </form>
+  </div>
+</template>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head"><h2 id="sheetTitle">Settings</h2><button class="x" id="closeSheet" aria-label="Close"><span class="ic" data-icon="x"></span></button></div>
+    <div class="group">
+      <div class="label">Screen layout</div>
+      <div class="layouts">
+        <button class="lay" data-layout="stacked"><span class="ic" data-icon="rows"></span>Stacked</button>
+        <button class="lay" data-layout="side"><span class="ic" data-icon="columns"></span>Side by side</button>
+        <button class="lay" data-layout="facing"><span class="ic" data-icon="arrows-down-up"></span>Across table</button>
+      </div>
+    </div>
+    <div class="group">
+      <div class="label">Loading face</div>
+      <div class="faces">
+        <button class="fp" data-face="mochi" aria-pressed="true"><span data-pet="mochi"></span>Mochi</button>
+        <button class="fp" data-face="kitty" aria-pressed="false"><span data-pet="kitty"></span>Kitty</button>
+      </div>
+    </div>
+    <div class="row"><span>Show both languages</span><button class="switch" id="bothSwitch" role="switch" aria-checked="false" aria-label="Show both languages"></button></div>
+    <div class="group" id="keyGroup" hidden>
+      <div class="label">Anthropic API key</div>
+      <form class="keyrow" id="keyForm"><input id="apikey" type="password" placeholder="sk-ant-..." autocomplete="off"><button class="pillbtn">Save</button></form>
+      <p class="note">Needed to translate outside the Claude app. Saved only in this browser.</p>
+    </div>
+    <div class="row"><button class="pillbtn danger" id="clearBtn"><span class="ic" data-icon="trash"></span>Clear conversation</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(() => {
+const ICONS = {"arrows-down-up": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M117.66,170.34a8,8,0,0,1,0,11.32l-32,32a8,8,0,0,1-11.32,0l-32-32a8,8,0,0,1,11.32-11.32L72,188.69V48a8,8,0,0,1,16,0V188.69l18.34-18.35A8,8,0,0,1,117.66,170.34Zm96-96-32-32a8,8,0,0,0-11.32,0l-32,32a8,8,0,0,0,11.32,11.32L168,67.31V208a8,8,0,0,0,16,0V67.31l18.34,18.35a8,8,0,0,0,11.32-11.32Z\"/></svg>", "caret-down": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z\"/></svg>", "columns": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M104,32H64A16,16,0,0,0,48,48V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,104,32Zm0,176H64V48h40ZM192,32H152a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,192,32Zm0,176H152V48h40Z\"/></svg>", "keyboard": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,144H32V64H224V192Zm-16-64a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16H200A8,8,0,0,1,208,128Zm0-32a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16H200A8,8,0,0,1,208,96ZM72,160a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16h8A8,8,0,0,1,72,160Zm96,0a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,160Zm40,0a8,8,0,0,1-8,8h-8a8,8,0,0,1,0-16h8A8,8,0,0,1,208,160Z\"/></svg>", "microphone": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M128,176a48.05,48.05,0,0,0,48-48V64a48,48,0,0,0-96,0v64A48.05,48.05,0,0,0,128,176ZM96,64a32,32,0,0,1,64,0v64a32,32,0,0,1-64,0Zm40,143.6V240a8,8,0,0,1-16,0V207.6A80.11,80.11,0,0,1,48,128a8,8,0,0,1,16,0,64,64,0,0,0,128,0,8,8,0,0,1,16,0A80.11,80.11,0,0,1,136,207.6Z\"/></svg>", "microphone-fill": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M80,128V64a48,48,0,0,1,96,0v64a48,48,0,0,1-96,0Zm128,0a8,8,0,0,0-16,0,64,64,0,0,1-128,0,8,8,0,0,0-16,0,80.11,80.11,0,0,0,72,79.6V240a8,8,0,0,0,16,0V207.6A80.11,80.11,0,0,0,208,128Z\"/></svg>", "paper-plane-right-fill": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M240,127.89a16,16,0,0,1-8.18,14L63.9,237.9A16.15,16.15,0,0,1,56,240a16,16,0,0,1-15-21.33l27-79.95A4,4,0,0,1,71.72,136H144a8,8,0,0,0,8-8.53,8.19,8.19,0,0,0-8.26-7.47h-72a4,4,0,0,1-3.79-2.72l-27-79.94A16,16,0,0,1,63.84,18.07l168,95.89A16,16,0,0,1,240,127.89Z\"/></svg>", "rows": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M208,136H48a16,16,0,0,0-16,16v40a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V152A16,16,0,0,0,208,136Zm0,56H48V152H208v40Zm0-144H48A16,16,0,0,0,32,64v40a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V64A16,16,0,0,0,208,48Zm0,56H48V64H208v40Z\"/></svg>", "sliders-horizontal": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M40,88H73a32,32,0,0,0,62,0h81a8,8,0,0,0,0-16H135a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16Zm64-24A16,16,0,1,1,88,80,16,16,0,0,1,104,64ZM216,168H199a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16h97a32,32,0,0,0,62,0h17a8,8,0,0,0,0-16Zm-48,24a16,16,0,1,1,16-16A16,16,0,0,1,168,192Z\"/></svg>", "stop-fill": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M216,56V200a16,16,0,0,1-16,16H56a16,16,0,0,1-16-16V56A16,16,0,0,1,56,40H200A16,16,0,0,1,216,56Z\"/></svg>", "translate": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M247.15,212.42l-56-112a8,8,0,0,0-14.31,0l-21.71,43.43A88,88,0,0,1,108,126.93,103.65,103.65,0,0,0,135.69,64H160a8,8,0,0,0,0-16H104V32a8,8,0,0,0-16,0V48H32a8,8,0,0,0,0,16h87.63A87.76,87.76,0,0,1,96,116.35a87.74,87.74,0,0,1-19-31,8,8,0,1,0-15.08,5.34A103.63,103.63,0,0,0,84,127a87.55,87.55,0,0,1-52,17,8,8,0,0,0,0,16,103.46,103.46,0,0,0,64-22.08,104.18,104.18,0,0,0,51.44,21.31l-26.6,53.19a8,8,0,0,0,14.31,7.16L148.94,192h70.11l13.79,27.58A8,8,0,0,0,240,224a8,8,0,0,0,7.15-11.58ZM156.94,176,184,121.89,211.05,176Z\"/></svg>", "trash": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z\"/></svg>", "x": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 256 256\" fill=\"currentColor\"><path d=\"M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z\"/></svg>"};
+const $ = id => document.getElementById(id);
+const fillIcons = root => root.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = ICONS[el.dataset.icon] || '' });
+
+const LANGS = {
+  yue:{short:'廣東話', label:'廣東話 Cantonese', name:'Cantonese', rec:/iPhone|iPad|Macintosh/.test(navigator.userAgent)?'zh-HK':'yue-Hant-HK', html:'zh-HK',
+       note:' (colloquial written Cantonese in Traditional Chinese characters, e.g. 係, 唔, 嘅, 咗)',
+       ui:{speak:'講嘢',type:'打字',tap:'撳一下開始講',listen:'聽緊… 講完再撳',field:'喺度打字',other:'對方講緊嘢',wait:'翻譯緊',toType:'打字',toSpeak:'講嘢',retry:'再試'}},
+  cmn:{short:'普通话', label:'普通话 Mandarin', name:'Mandarin Chinese', rec:'zh-CN', html:'zh-CN', note:' (Simplified Chinese characters)',
+       ui:{speak:'说话',type:'打字',tap:'点一下开始说',listen:'正在听… 说完再点',field:'在这里输入',other:'对方正在说',wait:'翻译中',toType:'打字',toSpeak:'说话',retry:'重试'}},
+  en:{short:'English', label:'English', name:'English', rec:'en-AU', html:'en', note:'',
+       ui:{speak:'Speak',type:'Type',tap:'Tap to start talking',listen:'Listening. Tap when done',field:'Type a message',other:'Speaking',wait:'Translating',toType:'Type',toSpeak:'Speak',retry:'Retry'}}
+};
+
+// ---------- state ----------
+const store = { get(k,d){ try{ const v=localStorage.getItem('lt.'+k); return v==null?d:JSON.parse(v) }catch{ return d } },
+                set(k,v){ try{ localStorage.setItem('lt.'+k, JSON.stringify(v)) }catch{} } };
+const S = {
+  langs: store.get('langs', ['yue','en']),
+  modes: [null, null],               // null = blank block, 'speak' or 'type'
+  layout: store.get('layout2','stacked'),
+  both: store.get('both', false),
+  face: store.get('face', 'mochi'),
+  big: null,                         // which block is enlarged (the listener)
+  live: ['',''],
+  listening: null,
+  msgs: []
+};
+let nextId = 1;
+
+// ---------- blocks ----------
+const B = [0,1].map(i => {
+  const el = $('b'+i);
+  el.appendChild($('blockTpl').content.cloneNode(true));
+  const q = s => el.querySelector(s);
+  return { el, feed:q('.feed'), langName:q('.lang-name'), sel:q('.lang-select'), swap:q('.swap'), swapIcon:q('.swap .ic'), swapLabel:q('.swap-label'),
+    idle:q('.dock-idle'), speak:q('.dock-speak'), type:q('.dock-type'), mic:q('.mic'), micIcon:q('.mic .ic'), hint:q('.hint'),
+    input:q('.dock-type input'), tSpeak:q('.t-speak'), tType:q('.t-type') };
+});
+fillIcons(document);
+
+// ---------- translation ----------
+let sample = null, apiKey = store.get('key','');
+const ready = (async () => {
+  if (window.claude && window.claude.use) { try { sample = await window.claude.use('sample') } catch { sample = null } }
+  $('keyGroup').hidden = !!sample;
+})();
+
+const MEMO = store.get('memo', {});
+function remember(k, v){
+  if (!v) return;
+  MEMO[k] = v;
+  const keys = Object.keys(MEMO);
+  if (keys.length > 300) for (const old of keys.slice(0, keys.length - 300)) delete MEMO[old];
+  store.set('memo', MEMO);
+}
+
+async function askClaude(prompt, onText, maxTokens = 300){
+  await ready;
+  if (sample) {
+    const r = await sample(prompt, { modelTier:'quick', onText: ({text}) => onText(text) });
+    return r.text;
+  }
+  if (!apiKey) throw {code:'no_key'};
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'content-type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body: JSON.stringify({ model:'claude-haiku-5-5', max_tokens:maxTokens, messages:[{role:'user',content:prompt}] })
+  });
+  if (!res.ok) throw {code: res.status===401 ? 'bad_key' : 'upstream_error'};
+  const data = await res.json();
+  const text = (data.content||[]).map(c=>c.text||'').join('').trim();
+  onText(text); return text;
+}
+
+function errCopy(e){
+  switch(e && e.code){
+    case 'not_granted': case 'sampling_disabled': return 'Claude access was declined for this page.';
+    case 'rate_limited': return 'Too many requests. Wait a moment, then retry.';
+    case 'no_key': return 'Add your API key in Settings to translate.';
+    case 'bad_key': return 'That API key was rejected. Check it in Settings.';
+    default: return 'Translation failed. Check your connection.';
+  }
+}
+
+async function translate(m){
+  const from = LANGS[m.lang], to = LANGS[m.to];
+  m.status = 'pending'; m.trans = ''; renderFeeds();
+  if (m.lang === m.to) { m.trans = m.orig; m.status = 'done'; renderFeeds(); return }
+  const key = m.lang + '>' + m.to + ':' + m.orig.toLowerCase().replace(/[\s.,!?。，！？、]+/g, ' ').trim();
+  if (MEMO[key]) { m.trans = MEMO[key]; m.status = 'done'; renderFeeds(); return }
+  const short = m.orig.length < 25;
+  const ctx = short ? S.msgs.filter(x => x!==m && x.status==='done').slice(-2).map(x => x.orig.slice(0, 80)).join('\n') : '';
+  const prompt =
+`Interpret this speech-recognised ${from.name} into natural spoken ${to.name}${to.note}. Keep tone and names; fix obvious mishearings. Output only the translation.
+${ctx ? 'Context:\n' + ctx + '\n' : ''}Text: ${m.orig}`;
+  try {
+    const out = await askClaude(prompt, t => { m.trans = t; renderFeeds() }, Math.min(300, 40 + m.orig.length * 3));
+    m.status = 'done';
+    remember(key, (out || m.trans).trim());
+  } catch(e) {
+    m.status = 'error'; m.err = errCopy(e);
+    if (e && e.code === 'no_key') openSheet();
+  }
+  renderFeeds();
+}
+
+function addMessage(i, text){
+  text = text.trim(); if (!text) return;
+  const m = { id: nextId++, from:i, orig:text, lang:S.langs[i], to:S.langs[1-i], trans:'', status:'pending' };
+  S.msgs.push(m);
+  setBig(1 - i);
+  translate(m);
+}
+
+// ---------- speech ----------
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, wake = null;
+
+function listen(i){
+  if (S.listening === i) { rec && rec.stop(); return }
+  if (rec) { rec.onend = null; try{ rec.abort() }catch{}; endListening() }
+  if (!SR) { toast("This browser can't turn speech into text. Use Type, or open Let's Talk in Safari or Chrome."); setMode(i,'type'); return }
+  const r = new SR();
+  r.lang = LANGS[S.langs[i]].rec; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;
+  let finalText = '';
+  r.onresult = e => {
+    let interim = ''; finalText = '';
+    for (const res of e.results) (res.isFinal ? (finalText += res[0].transcript) : (interim += res[0].transcript));
+    S.live[i] = finalText + interim; renderFeeds();
+  };
+  r.onerror = e => {
+    if (['not-allowed','service-not-allowed','audio-capture'].includes(e.error))
+      toast("The microphone is blocked here. Use Type, or open the phone version and allow the mic.");
+    else if (e.error !== 'no-speech' && e.error !== 'aborted') toast('Speech recognition stopped (' + e.error + '). Tap the mic to try again.');
+  };
+  r.onend = () => { const t = (finalText || S.live[i]).trim(); endListening(); if (t) addMessage(i, t) };
+  rec = r; S.listening = i; S.live[i] = ''; setBig(1 - i); render();
+  try { r.start() } catch { endListening(); toast('Could not start the microphone. Tap again.') }
+  if (navigator.wakeLock && !wake) navigator.wakeLock.request('screen').then(w => wake = w).catch(()=>{});
+}
+function endListening(){ const i = S.listening; rec = null; S.listening = null; if (i != null) S.live[i] = ''; render() }
+
+// ---------- rendering ----------
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function setBig(i){ S.big = i; B.forEach((b,k) => b.el.classList.toggle('big', k === i)) }
+function setMode(i, mode){
+  S.modes[i] = mode; render();
+  if (mode === 'type') B[i].input.focus();
+  if (mode === 'speak') listen(i);
+}
+
+// ---------- loading faces ----------
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const BEATS = 'keyTimes="0;0.2;0.4;0.6;0.8;1"';
+const mouthAnim = vals => `<animate attributeName="d" dur="1.3s" repeatCount="indefinite" ${BEATS} values="${vals.join(';')}"/>`;
+const tongueAnim = `<animate attributeName="opacity" dur="1.3s" repeatCount="indefinite" ${BEATS} values="0;0;0;1;0;0"/>`;
+const PETS = {
+  mochi: `<svg class="pet%BIG%" viewBox="0 0 100 100" role="img" aria-label="%LABEL%"><g class="hop">
+    <path class="body" d="M50 14 C80 14 94 34 94 57 C94 81 76 90 50 90 C24 90 6 81 6 57 C6 34 20 14 50 14 Z"/>
+    <ellipse class="eye" cx="33" cy="52" rx="5.5" ry="7"/><ellipse class="eye" cx="67" cy="52" rx="5.5" ry="7"/>
+    <circle class="shine" cx="35" cy="49.5" r="2"/><circle class="shine" cx="69" cy="49.5" r="2"/>
+    <ellipse class="cheek" cx="22" cy="65" rx="7" ry="4.5"/><ellipse class="cheek" cx="78" cy="65" rx="7" ry="4.5"/>
+    <path class="mouth" d="M43 63 Q46 67.5 50 67.5 Q54 67.5 57 63 Z">${mouthAnim(['M43 63 Q46 67.5 50 67.5 Q54 67.5 57 63 Z','M43 63 Q43 77 50 77 Q57 77 57 63 Z','M43 63 Q43 70 50 70 Q57 70 57 63 Z','M42.5 63 Q42.5 80 50 80 Q57.5 80 57.5 63 Z','M43 63 Q43 70 50 70 Q57 70 57 63 Z','M43 63 Q46 67.5 50 67.5 Q54 67.5 57 63 Z'])}</path>
+    <ellipse class="tongue" cx="50" cy="75" rx="4.6" ry="2.6" opacity="0">${tongueAnim}</ellipse>
+  </g></svg>`,
+  kitty: `<svg class="pet%BIG%" viewBox="0 0 100 100" role="img" aria-label="%LABEL%"><g class="tilt">
+    <path class="body" d="M16 46 L18 14 L44 30 Z"/><path class="earin" d="M22 38 L23 22 L37 31 Z"/>
+    <path class="body" d="M84 46 L82 14 L56 30 Z"/><path class="earin" d="M78 38 L77 22 L63 31 Z"/>
+    <ellipse class="body" cx="50" cy="60" rx="40" ry="32"/>
+    <ellipse class="eye" cx="34" cy="56" rx="4.8" ry="6.2"/><ellipse class="eye" cx="66" cy="56" rx="4.8" ry="6.2"/>
+    <circle class="shine" cx="35.7" cy="53.8" r="1.8"/><circle class="shine" cx="67.7" cy="53.8" r="1.8"/>
+    <ellipse class="cheek" cx="25" cy="72" rx="6.5" ry="3.8"/><ellipse class="cheek" cx="75" cy="72" rx="6.5" ry="3.8"/>
+    <path class="whisk" d="M13 62 L24 63.5"/><path class="whisk" d="M13 70 L24 68"/><path class="whisk" d="M87 62 L76 63.5"/><path class="whisk" d="M87 70 L76 68"/>
+    <path class="mouth" d="M45 69 Q47 72.5 50 72.5 Q53 72.5 55 69 Z">${mouthAnim(['M45 69 Q47 72.5 50 72.5 Q53 72.5 55 69 Z','M44.5 69 Q44.5 80 50 80 Q55.5 80 55.5 69 Z','M45 69 Q45 75 50 75 Q55 75 55 69 Z','M44 69 Q44 84 50 84 Q56 84 56 69 Z','M45 69 Q45 75 50 75 Q55 75 55 69 Z','M45 69 Q47 72.5 50 72.5 Q53 72.5 55 69 Z'])}</path>
+    <ellipse class="tongue" cx="50" cy="79" rx="3.8" ry="2.4" opacity="0">${tongueAnim}</ellipse>
+    <path class="nose" d="M46.5 63 Q50 61.5 53.5 63 Q50 68 46.5 63 Z"/>
+  </g></svg>`
+};
+function petHTML(kind, big, label){
+  let h = PETS[kind].replace('%BIG%', big ? ' big' : '').replace('%LABEL%', label || '');
+  if (REDUCE) h = h.replace(/<animate[^>]*\/>/g, '');
+  return h;
+}
+
+function renderFeeds(){
+  B.forEach((b, i) => {
+    const L = LANGS[S.langs[i]];
+    const atBottom = b.feed.scrollHeight - b.feed.scrollTop - b.feed.clientHeight < 60;
+    const lastIn = [...S.msgs].reverse().find(m => m.from !== i);
+    const lastOut = S.msgs[S.msgs.length - 1];
+    let html = '';
+    for (const m of S.msgs) {
+      const mine = m.from === i;
+      if (!mine && m.status === 'error') {
+        html += `<div class="line err">${esc(m.err)}<button data-retry="${m.id}">${esc(L.ui.retry)}</button></div>`; continue;
+      }
+      const latest = mine ? m === lastOut : m === lastIn;
+      const main = mine ? m.orig : m.trans;
+      const sub = S.both ? (mine ? m.trans : m.orig) : '';
+      const cls = ['line', mine ? 'out' : 'in', 's'+m.from, latest ? 'latest' : '', (!mine && !m.trans) ? 'pending' : ''].join(' ');
+      const txt = main ? esc(main) : `<span class="waiting">${petHTML(S.face, false, L.ui.wait)}<span>${esc(L.ui.wait)}</span></span>`;
+      html += `<div class="${cls}"><span class="who">${esc(LANGS[m.lang].short)}</span><div class="txt">${txt}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>`;
+    }
+    // the other person is talking right now
+    if (S.listening === 1 - i) html += `<div class="line in latest s${1-i}"><span class="who">${esc(L.ui.other)}</span><div class="txt waiting">${petHTML(S.face, true, L.ui.other)}</div></div>`;
+    if (S.live[i]) html += `<div class="line live">${esc(S.live[i])}</div>`;
+    if (b.html !== html) { b.feed.innerHTML = html; b.html = html }
+    if (atBottom || S.live[i] || S.listening !== null) b.feed.scrollTop = b.feed.scrollHeight;
+    b.el.classList.toggle('blank', !S.modes[i] && !html);
+  });
+}
+
+function render(){
+  $('app').dataset.layout = S.layout;
+  document.querySelectorAll('.lay').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.layout === S.layout)));
+  $('bothSwitch').setAttribute('aria-checked', String(S.both));
+  document.querySelectorAll('.fp').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.face === S.face)));
+  B.forEach((b, i) => {
+    const L = LANGS[S.langs[i]], mode = S.modes[i], on = S.listening === i;
+    b.el.lang = L.html;
+    b.langName.textContent = L.short; b.sel.value = S.langs[i];
+    b.tSpeak.textContent = L.ui.speak; b.tType.textContent = L.ui.type;
+    b.idle.hidden = !!mode; b.speak.hidden = mode !== 'speak'; b.type.hidden = mode !== 'type';
+    b.type.style.display = mode === 'type' ? 'flex' : 'none';
+    b.swap.hidden = !mode;
+    if (mode) {
+      const toType = mode === 'speak';
+      b.swapIcon.innerHTML = ICONS[toType ? 'keyboard' : 'microphone'];
+      b.swapLabel.textContent = toType ? L.ui.toType : L.ui.toSpeak;
+    }
+    b.mic.classList.toggle('on', on);
+    b.micIcon.innerHTML = ICONS[on ? 'stop-fill' : 'microphone-fill'];
+    b.mic.setAttribute('aria-label', on ? L.ui.listen : L.ui.tap);
+    b.hint.textContent = on ? L.ui.listen : L.ui.tap; b.hint.classList.toggle('on', on);
+    b.input.placeholder = L.ui.field;
+    b.el.classList.toggle('compact', S.layout === 'side' || b.el.clientHeight < 230);
+  });
+  renderFeeds();
+}
+
+let toastTimer;
+function toast(t){ const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => el.hidden = true, 5000) }
+function openSheet(){ $('apikey').value = apiKey; $('scrim').hidden = false; $('closeSheet').focus() }
+function closeSheet(){ $('scrim').hidden = true; $('hub').focus() }
+
+// ---------- wiring ----------
+B.forEach((b, i) => {
+  b.sel.innerHTML = Object.entries(LANGS).map(([k,v]) => `<option value="${k}">${v.label}</option>`).join('');
+  b.sel.onchange = () => { S.langs[i] = b.sel.value; store.set('langs', S.langs); render() };
+  b.idle.querySelectorAll('.tile').forEach(t => t.onclick = () => setMode(i, t.dataset.mode));
+  b.swap.onclick = () => { if (S.listening === i && rec) rec.abort(); setMode(i, S.modes[i] === 'speak' ? 'type' : 'speak') };
+  b.mic.onclick = () => listen(i);
+  b.type.onsubmit = e => { e.preventDefault(); addMessage(i, b.input.value); b.input.value = '' };
+  b.feed.onclick = e => { const id = e.target.dataset && e.target.dataset.retry; if (id) { const m = S.msgs.find(x => x.id == id); m && translate(m) } };
+});
+$('hub').onclick = openSheet;
+$('closeSheet').onclick = closeSheet;
+$('scrim').onclick = e => { if (e.target === $('scrim')) closeSheet() };
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('scrim').hidden) closeSheet() });
+document.querySelectorAll('.lay').forEach(x => x.onclick = () => { S.layout = x.dataset.layout; store.set('layout2', S.layout); render() });
+document.querySelectorAll('[data-pet]').forEach(el => { el.innerHTML = petHTML(el.dataset.pet, false, el.dataset.pet) });
+document.querySelectorAll('.fp').forEach(x => x.onclick = () => { S.face = x.dataset.face; store.set('face', S.face); render() });
+$('bothSwitch').onclick = () => { S.both = !S.both; store.set('both', S.both); render() };
+$('clearBtn').onclick = () => { S.msgs = []; S.modes = [null, null]; setBig(null); render(); closeSheet() };
+$('keyForm').onsubmit = e => { e.preventDefault(); apiKey = $('apikey').value.trim(); store.set('key', apiKey); toast(apiKey ? 'API key saved on this device.' : 'API key removed.') };
+addEventListener('resize', () => render());
+
+render();
+})();
+</script>
+</body></html>
